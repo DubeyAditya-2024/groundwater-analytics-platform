@@ -1,24 +1,18 @@
-# Stage 1: Build Environment
-FROM python:3.11-slim as builder
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim
 
+# Set the working directory in the container
 WORKDIR /app
 
-# Install packages
-COPY requirements.txt .
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed packages specified in requirements.txt
+# This is the CRITICAL STEP that installs gunicorn and uvicorn
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Stage 2: Final Image
-FROM python:3.11-slim
+# Make port 8000 available to the world outside this container
+EXPOSE 8000
 
-WORKDIR /app
-
-# Copy files from the builder stage
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY . .
-
-# Cloud Run expects the service to listen on the port defined by the PORT environment variable (default 8080)
-ENV PORT 8080
-
-# Command to run your application using Uvicorn
-# The format is uvicorn [module_name]:[app_instance_name] --host 0.0.0.0 --port $PORT
-CMD exec uvicorn main_api:app --host 0.0.0.0 --port $PORT
+# The command to run your web service (Override this with Render's Docker Command)
+# CMD ["gunicorn", "main_api:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
